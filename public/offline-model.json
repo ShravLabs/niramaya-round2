@@ -1,0 +1,25 @@
+{
+  "model": "offline-lite",
+  "conditions": [
+    {
+      "keywords": ["fever", "bukhar", "temperature"],
+      "diagnosis": "Possible viral fever. Rest and fluids recommended.",
+      "triage": "YELLOW"
+    },
+    {
+      "keywords": ["headache", "sir dard", "head pain"],
+      "diagnosis": "Common headache. Usually resolves with rest.",
+      "triage": "GREEN"
+    },
+    {
+      "keywords": ["chest pain", "seene mein dard", "breathing"],
+      "diagnosis": "Possible cardiac emergency. Immediate attention needed.",
+      "triage": "RED"
+    },
+    {
+      "keywords": ["cough", "khansi", "cold"],
+      "diagnosis": "Common cold symptoms. Monitor for 3 days.",
+      "triage": "GREEN"
+    }
+  ]
+}
