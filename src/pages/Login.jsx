@@ -50,6 +50,9 @@ export default function Login() {
 
   const validate = () => {
     const e = {};
+    // ✅ Name required for ALL roles
+    if (!form.name || form.name.trim().length < 2) e.name = "Full name is required";
+
     if (role==="admin") {
       if (!form.email?.includes("@")) e.email="Valid email required";
       if (!form.password||form.password.length<6) e.password="Min 6 characters";
@@ -84,6 +87,7 @@ export default function Login() {
 
   const finish = () => {
     setStep("success");
+    // ✅ Use the name the user typed, not just the demo user name
     const user = { role, ...DEMO_USERS[role], ...form };
     signIn(user.phone || user.email, role);
   };
@@ -155,7 +159,8 @@ export default function Login() {
       <div className="text-center">
         <div className="text-6xl animate-bounce mb-4">✅</div>
         <h2 className="text-2xl font-black text-white">Identity Verified!</h2>
-        <p className="text-blue-300 mt-1">Welcome, {DEMO_USERS[role]?.name}</p>
+        {/* ✅ Shows the name the user typed in the form */}
+        <p className="text-blue-300 mt-1">Welcome, {form.name || DEMO_USERS[role]?.name}</p>
         <p className="text-gray-400 text-sm mt-1">Loading {ri?.label} dashboard...</p>
       </div>
     </div>
@@ -179,6 +184,23 @@ export default function Login() {
         </div>
 
         <div className="p-5 space-y-3 overflow-y-auto" style={{maxHeight:"75vh"}}>
+
+          {/* ✅ FULL NAME FIELD - shown for ALL roles at the top */}
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Full Name *</label>
+            <input
+              className={inp("name")}
+              placeholder={
+                role==="patient" ? "e.g. Ramesh Kumar" :
+                role==="asha"    ? "e.g. Lakshmi Devi" :
+                role==="doctor"  ? "e.g. Dr. Arjun Rao" :
+                                   "e.g. Suresh Patil"
+              }
+              value={form.name||""}
+              onChange={e=>set("name", e.target.value)}
+            />
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+          </div>
 
           {/* ADMIN */}
           {role==="admin" && <>
@@ -205,7 +227,7 @@ export default function Login() {
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
             </div>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
-              Demo → ID: <strong>ADMN-KA-001</strong> · Email: <strong>admin@niramaya.gov.in</strong> · Pass: <strong>Admin@123</strong>
+              Demo → Name: <strong>Suresh Patil</strong> · ID: <strong>ADMN-KA-001</strong> · Email: <strong>admin@niramaya.gov.in</strong> · Pass: <strong>Admin@123</strong>
             </div>
           </>}
 
@@ -252,7 +274,7 @@ export default function Login() {
               {errors.doc && <p className="text-red-500 text-xs mt-1">{errors.doc}</p>}
             </div>
             <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-700">
-              Demo → Phone: <strong>9123456789</strong> · Aadhaar: <strong>2345 6789 0123</strong> · ID: <strong>ASHA-KA-00421</strong>
+              Demo → Name: <strong>Lakshmi Devi</strong> · Phone: <strong>9123456789</strong> · Aadhaar: <strong>2345 6789 0123</strong> · ID: <strong>ASHA-KA-00421</strong>
             </div>
           </>}
 
@@ -287,14 +309,14 @@ export default function Login() {
               {errors.doc && <p className="text-red-500 text-xs mt-1">{errors.doc}</p>}
             </div>
             <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-xs text-purple-700">
-              Demo → Phone: <strong>9988776655</strong> · Aadhaar: <strong>3456 7890 1234</strong> · MCI: <strong>KA-MCI-54321</strong>
+              Demo → Name: <strong>Dr. Arjun Rao</strong> · Phone: <strong>9988776655</strong> · Aadhaar: <strong>3456 7890 1234</strong> · MCI: <strong>KA-MCI-54321</strong>
             </div>
           </>}
 
           {/* PATIENT demo hint */}
           {role==="patient" && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
-              Demo → Phone: <strong>9876543210</strong> · Aadhaar: <strong>1234 5678 9012</strong>
+              Demo → Name: <strong>Ramesh Kumar</strong> · Phone: <strong>9876543210</strong> · Aadhaar: <strong>1234 5678 9012</strong>
             </div>
           )}
 
