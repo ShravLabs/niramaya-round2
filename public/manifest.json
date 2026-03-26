@@ -1,16 +1,24 @@
 {
-  "name": "NirAmaya - AI Healthcare",
+  "name": "NirAmaya - Rural Health",
   "short_name": "NirAmaya",
-  "description": "AI Healthcare for Rural India",
+  "description": "AI-powered rural healthcare for every family",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#2563EB",
-  "theme_color": "#2563EB",
+  "background_color": "#0f766e",
+  "theme_color": "#0f766e",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
