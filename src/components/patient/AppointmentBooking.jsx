@@ -4,24 +4,59 @@ const AppointmentBooking = () => {
   const [appointments, setAppointments] = useState([
     { id:1, doctor:'Dr. Sharma', hospital:'PHC Hoskote', date:'Mar 6, 2026', time:'10:00 AM', status:'Confirmed', queueNo:5, reason:'General checkup', specialization:'General Medicine' }
   ]);
-  const [showBooking, setShowBooking]     = useState(false);
-  const [viewAppt, setViewAppt]           = useState(null);
-  const [cancelAppt, setCancelAppt]       = useState(null);
-  const [toast, setToast]                 = useState(null);
+  const [showBooking, setShowBooking]   = useState(false);
+  const [viewAppt, setViewAppt]         = useState(null);
+  const [cancelAppt, setCancelAppt]     = useState(null);
+  const [toast, setToast]               = useState(null);
   const [newAppointment, setNewAppointment] = useState({ hospital:'', doctor:'', date:'', time:'', reason:'' });
 
-  const hospitals   = ['PHC Hoskote','District Hospital','Community Health Center'];
-  const doctors     = ['Dr. Sharma (General)','Dr. Priya (Gynecologist)','Dr. Kumar (Pediatrician)'];
-  const timeSlots   = ['9:00 AM','10:00 AM','11:00 AM','2:00 PM','3:00 PM','4:00 PM'];
+  // ── Payment flow states ──────────────────────────────────────────────
+  const [showPayment, setShowPayment]   = useState(false);
+  const [paymentStep, setPaymentStep]   = useState('form'); // 'form' | 'processing' | 'success'
+  const [selectedUPI, setSelectedUPI]   = useState('');
+  // ─────────────────────────────────────────────────────────────────────
+
+  const hospitals = ['PHC Hoskote','District Hospital','Community Health Center'];
+  const doctors   = ['Dr. Sharma (General)','Dr. Priya (Gynecologist)','Dr. Kumar (Pediatrician)'];
+  const timeSlots = ['9:00 AM','10:00 AM','11:00 AM','2:00 PM','3:00 PM','4:00 PM'];
+  const upiApps   = [
+    { id:'gpay',    label:'Google Pay',  icon:'💳' },
+    { id:'phonepe', label:'PhonePe',     icon:'📱' },
+    { id:'paytm',   label:'Paytm',       icon:'💰' },
+    { id:'upi',     label:'UPI ID',      icon:'🏦' },
+  ];
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
-  const bookAppointment = () => {
+  // Called when user clicks "Proceed to Pay ₹10"
+  const handleConfirmBooking = () => {
     if (!newAppointment.hospital || !newAppointment.date) return;
-    setAppointments(prev => [...prev, { id:Date.now(), ...newAppointment, status:'Confirmed', queueNo:Math.floor(Math.random()*15)+1, specialization:'General Medicine' }]);
-    setNewAppointment({ hospital:'', doctor:'', date:'', time:'', reason:'' });
-    setShowBooking(false);
-    showToast('✅ Appointment booked! SMS confirmation sent.');
+    setPaymentStep('form');
+    setSelectedUPI('');
+    setShowPayment(true);
+  };
+
+  // Called when user clicks "Pay ₹10" inside payment modal
+  const handlePay = () => {
+    if (!selectedUPI) return;
+    setPaymentStep('processing');
+    setTimeout(() => {
+      setPaymentStep('success');
+      setTimeout(() => {
+        setShowPayment(false);
+        setShowBooking(false);
+        setAppointments(prev => [...prev, {
+          id: Date.now(),
+          ...newAppointment,
+          status: 'Confirmed',
+          queueNo: Math.floor(Math.random() * 15) + 1,
+          specialization: 'General Medicine',
+          paid: true,
+        }]);
+        setNewAppointment({ hospital:'', doctor:'', date:'', time:'', reason:'' });
+        showToast('✅ Payment successful! Appointment booked & SMS sent.');
+      }, 2000);
+    }, 2000);
   };
 
   const confirmCancel = () => {
@@ -61,7 +96,10 @@ const AppointmentBooking = () => {
                 <h4 className="text-xl font-bold text-gray-800">{appt.doctor}</h4>
                 <p className="text-gray-600">{appt.hospital}</p>
               </div>
-              <span className="bg-green-100 text-green-700 px-3 py-1 rounded-lg font-semibold text-sm">✅ {appt.status}</span>
+              <div className="flex flex-col items-end gap-1">
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-lg font-semibold text-sm">✅ {appt.status}</span>
+                {appt.paid && <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg font-semibold text-xs">💳 ₹10 Paid</span>}
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-4 mb-4 text-center">
               <div className="bg-blue-50 p-3 rounded-lg"><div className="text-sm text-gray-500">Date</div><div className="font-bold text-gray-800">{appt.date}</div></div>
@@ -76,7 +114,7 @@ const AppointmentBooking = () => {
         ))}
       </div>
 
-      {/* View Details Modal */}
+      {/* ── View Details Modal ─────────────────────────────────────────── */}
       {viewAppt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{backgroundColor:"rgba(0,0,0,0.55)"}} onClick={() => setViewAppt(null)}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -93,13 +131,14 @@ const AppointmentBooking = () => {
                 <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">✅ {viewAppt.status}</span>
               </div>
               {[
-                { label:"Doctor",         val: viewAppt.doctor },
-                { label:"Hospital / PHC", val: viewAppt.hospital },
-                { label:"Specialization", val: viewAppt.specialization || "General Medicine" },
-                { label:"Date",           val: viewAppt.date },
-                { label:"Time",           val: viewAppt.time },
-                { label:"Queue Number",   val: `#${viewAppt.queueNo}` },
-                { label:"Reason",         val: viewAppt.reason || "General checkup" },
+                { label:"Doctor",           val: viewAppt.doctor },
+                { label:"Hospital / PHC",   val: viewAppt.hospital },
+                { label:"Specialization",   val: viewAppt.specialization || "General Medicine" },
+                { label:"Date",             val: viewAppt.date },
+                { label:"Time",             val: viewAppt.time },
+                { label:"Queue Number",     val: `#${viewAppt.queueNo}` },
+                { label:"Reason",           val: viewAppt.reason || "General checkup" },
+                { label:"Consultation Fee", val: "₹10 (Paid)" },
               ].map(row => (
                 <div key={row.label} className="flex justify-between items-center py-1">
                   <span className="text-gray-500 text-sm">{row.label}</span>
@@ -115,7 +154,7 @@ const AppointmentBooking = () => {
         </div>
       )}
 
-      {/* Cancel Confirmation Modal */}
+      {/* ── Cancel Confirmation Modal ──────────────────────────────────── */}
       {cancelAppt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{backgroundColor:"rgba(0,0,0,0.55)"}} onClick={() => setCancelAppt(null)}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center" onClick={e => e.stopPropagation()}>
@@ -131,11 +170,19 @@ const AppointmentBooking = () => {
         </div>
       )}
 
-      {/* Booking Modal */}
-      {showBooking && (
+      {/* ── Booking Modal ──────────────────────────────────────────────── */}
+      {showBooking && !showPayment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-2xl font-bold mb-6">Book Appointment</h3>
+            <h3 className="text-2xl font-bold mb-2">Book Appointment</h3>
+            {/* Fee notice */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-5 flex items-center gap-3">
+              <span className="text-2xl">💳</span>
+              <div>
+                <p className="text-sm font-bold text-blue-800">Consultation Fee: ₹10</p>
+                <p className="text-xs text-blue-600">One-time nominal fee per doctor visit</p>
+              </div>
+            </div>
             <div className="space-y-4">
               <select value={newAppointment.hospital} onChange={e => setNewAppointment({...newAppointment,hospital:e.target.value})} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
                 <option value="">Select Hospital / PHC</option>
@@ -153,12 +200,109 @@ const AppointmentBooking = () => {
               <input type="text" placeholder="Reason for visit" value={newAppointment.reason} onChange={e => setNewAppointment({...newAppointment,reason:e.target.value})} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none" />
             </div>
             <div className="flex gap-4 mt-6">
-              <button onClick={bookAppointment} className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-lg">Confirm Booking</button>
+              <button
+                onClick={handleConfirmBooking}
+                disabled={!newAppointment.hospital || !newAppointment.date}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg"
+              >
+                Proceed to Pay ₹10 →
+              </button>
               <button onClick={() => setShowBooking(false)} className="flex-1 bg-gray-300 text-gray-800 font-bold py-3 rounded-lg">Cancel</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* ── Payment Modal ──────────────────────────────────────────────── */}
+      {showPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{backgroundColor:"rgba(0,0,0,0.65)"}}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
+
+            {/* FORM step */}
+            {paymentStep === 'form' && (
+              <>
+                <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-5">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-black text-lg">💳 Pay Consultation Fee</h3>
+                      <p className="text-blue-200 text-xs mt-0.5">Secure payment · NirAmaya Health</p>
+                    </div>
+                    <button onClick={() => setShowPayment(false)} className="text-white/70 hover:text-white text-2xl font-bold">×</button>
+                  </div>
+                  <div className="mt-4 bg-white/20 rounded-2xl px-5 py-3 text-center">
+                    <p className="text-blue-100 text-xs mb-1">Amount to Pay</p>
+                    <p className="text-white font-black text-4xl">₹10</p>
+                    <p className="text-blue-200 text-xs mt-1">Doctor Consultation Fee</p>
+                  </div>
+                </div>
+                <div className="px-5 pt-4 pb-5">
+                  <div className="bg-gray-50 rounded-xl p-3 text-sm mb-4">
+                    <p className="font-semibold text-gray-700 mb-1">📅 Booking Summary</p>
+                    <p className="text-gray-500">{newAppointment.doctor || 'Doctor'} · {newAppointment.hospital}</p>
+                    <p className="text-gray-500">{newAppointment.date} · {newAppointment.time}</p>
+                  </div>
+                  <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Choose Payment Method</p>
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {upiApps.map(app => (
+                      <button
+                        key={app.id}
+                        onClick={() => setSelectedUPI(app.id)}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                          selectedUPI === app.id
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        <span className="text-lg">{app.icon}</span>
+                        {app.label}
+                        {selectedUPI === app.id && <span className="ml-auto text-blue-500">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handlePay}
+                    disabled={!selectedUPI}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-black py-3.5 rounded-xl text-base mb-3 transition-all"
+                  >
+                    {selectedUPI ? `Pay ₹10 via ${upiApps.find(u => u.id === selectedUPI)?.label}` : 'Select payment method'}
+                  </button>
+                  <p className="text-center text-xs text-gray-400">🔒 100% Secure · Powered by NirAmaya Pay</p>
+                </div>
+              </>
+            )}
+
+            {/* PROCESSING step */}
+            {paymentStep === 'processing' && (
+              <div className="p-10 text-center">
+                <div className="flex justify-center mb-5">
+                  <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                </div>
+                <h3 className="text-xl font-black text-gray-800 mb-2">Processing Payment…</h3>
+                <p className="text-gray-500 text-sm">Please wait, do not close this screen</p>
+                <p className="text-blue-600 font-bold text-lg mt-4">₹10</p>
+              </div>
+            )}
+
+            {/* SUCCESS step */}
+            {paymentStep === 'success' && (
+              <div className="p-10 text-center">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-4xl">✅</span>
+                </div>
+                <h3 className="text-2xl font-black text-green-600 mb-1">Payment Successful!</h3>
+                <p className="text-gray-500 text-sm mb-4">₹10 paid · Appointment confirmed</p>
+                <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-left mb-4">
+                  <p className="text-xs text-green-700 font-semibold">Transaction ID: TXN{Date.now().toString().slice(-8)}</p>
+                  <p className="text-xs text-green-600 mt-1">SMS confirmation will be sent shortly</p>
+                </div>
+                <p className="text-xs text-gray-400">Redirecting to your appointments…</p>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
